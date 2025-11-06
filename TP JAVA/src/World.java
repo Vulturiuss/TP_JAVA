@@ -9,32 +9,39 @@ public class World {
     public World(String fileName) {
         try {
             BufferedReader buf = new BufferedReader(new FileReader(fileName));
-            String s = buf.readLine();
+            String s = buf.readLine(); // lire l'entête
+            s = buf.readLine();        // passer la première ligne d'entête
+
             while (s != null) {
                 s = s.replaceAll("\"", "");
                 String[] fields = s.split(",");
 
-                if (fields[1].equals("large_airport")) {
-                    try {
-                        String code = fields[9]; // Code IATA
+                try {
+                    if (fields.length > 12 && fields[1].equals("large_airport") && !fields[9].isEmpty()) {
+                        String code = fields[9]; // code IATA
                         String name = fields[2];
-                        String[] coords = fields[11].split(",");
-                        double longitude = Double.parseDouble(coords[0]);
-                        double latitude = Double.parseDouble(coords[1]);
+                        double longitude = Double.parseDouble(fields[11]);
+                        double latitude = Double.parseDouble(fields[12]);
 
                         Aeroport a = new Aeroport(code, name, latitude, longitude);
                         list.add(a);
-                    } catch (Exception e) {
-                        // Certaines lignes peuvent être mal formées
                     }
+                } catch (Exception e) {
+                    System.out.println("Ligne ignorée : " + s);
                 }
+
                 s = buf.readLine();
             }
+
+            buf.close();
+            System.out.println("Import terminé : " + list.size() + " aéroports chargés.");
+
         } catch (Exception e) {
-            System.out.println("Maybe the file isn't there ?");
+            System.out.println("Maybe the file isn't there?");
             e.printStackTrace();
         }
     }
+
 
     public List<Aeroport> getList() {
         return list;
@@ -76,22 +83,5 @@ public class World {
 
         return Math.pow(theta2 - theta1, 2)
                 + Math.pow((phi2 - phi1) * Math.cos((theta2 + theta1) / 2), 2);
-    }
-
-    // Pour test rapide
-    public static void main(String[] args) {
-        World w = new World("./data/airport-codes_no_comma.csv");
-        System.out.println("Found " + w.getList().size() + " airports.");
-
-        Aeroport paris = w.findNearestAirport(2.316, 48.866);
-        Aeroport cdg = w.findByCode("CDG");
-
-        double distance = w.distance(2.316, 48.866, paris.getLongitude(), paris.getLatitude());
-        System.out.println("Nearest airport: " + paris);
-        System.out.println("Distance: " + distance);
-
-        double distanceCDG = w.distance(2.316, 48.866, cdg.getLongitude(), cdg.getLatitude());
-        System.out.println("CDG: " + cdg);
-        System.out.println("Distance: " + distanceCDG);
     }
 }
